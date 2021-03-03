@@ -1,0 +1,53 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  
+  config.vm.define "sb-ansible-vm" do |control|
+    control.vm.hostname = "sb-ansible-vm"
+    control.vm.box = "bento/ubuntu-20.04"
+    control.vm.network "private_network", type: "dhcp"
+    control.vm.provider "virtualbox" do |node|
+			node.name = "sb-ansible-vm"
+      node.customize ["modifyvm", :id, "--memory", "1024"]
+		end
+    control.vm.provision "shell", inline: <<-SHELL
+      sudo apt update -y
+      sudo apt install net-tools -y
+      sudo apt install ansible -y
+    SHELL
+  end
+
+  (1..2).each do |i|
+		config.vm.define "sb-ubuntu-vm-#{i}" do |node|
+      node.vm.hostname = "sb-ubuntu-vm-#{i}"
+      node.vm.box = "bento/ubuntu-20.04"
+      node.vm.network "private_network", type: "dhcp"
+			node.vm.provider "virtualbox" do |node|
+				node.name = "sb-ubuntu-vm-#{i}"
+        node.customize ["modifyvm", :id, "--memory", "1024"]
+			end
+      node.vm.provision "shell", inline: <<-SHELL
+        sudo apt update -y
+        sudo apt install net-tools -y
+      SHELL
+		end
+	end
+
+  config.vm.define "sb-centos-vm" do |centos|
+    centos.vm.hostname = "sb-centos-vm"
+    centos.vm.box = "centos/7"
+    centos.vm.network "private_network", type: "dhcp"
+    centos.vm.provider "virtualbox" do |node|
+      node.name = "sb-centos-vm"
+      node.customize ["modifyvm", :id, "--memory", "1024"]
+    end
+    centos.vm.provision "shell", inline: <<-SHELL
+        sudo yum update -y
+        sudo yum install net-tools -y
+        sudo sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+        sudo systemctl restart sshd
+    SHELL
+  end
+
+end
